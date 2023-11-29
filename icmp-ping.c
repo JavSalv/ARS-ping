@@ -49,6 +49,7 @@ const char* msg_parameter_problem[] = {
     "Bad Length."
 };
 
+unsigned short create_checksum(unsigned char* addr, size_t size);
 ICMPHeader createICMP_header();
 void createICMP_request(EchoRequest* request);
 void print_info_msg(unsigned char type, unsigned char code);
@@ -114,6 +115,8 @@ int main(int argc, char** argv){
     aux = recvfrom(sockfd,reply, sizeof(*reply),0, (struct sockaddr*) &server_addr, &addr_size);
     ASSERT(aux != -1, "Error recibiendo mensaje: %s\n",strerror(errno));
 
+    ASSERT(!create_checksum((unsigned char*)&reply->icmpMsg, sizeof(EchoRequest)), "Error, mensaje de respuesta corrupto. Checksum: %hx\n",reply->icmpMsg.icmpHdr.checksum);
+
     printf("Respuesta recibida desde: %s\n", inet_ntoa(server_addr.sin_addr));
 
     VERBOSE_MSG("-> Tamaño de la respuesta: %lu\n"
@@ -126,6 +129,8 @@ int main(int argc, char** argv){
     free(request);
     free(reply);
     close(sockfd);
+
+    return 0;
 }
 
 //Genera una cabecera ICMP tipo Request (Type 8, Code 0).
