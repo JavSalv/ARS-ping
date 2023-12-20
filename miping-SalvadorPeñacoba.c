@@ -42,18 +42,22 @@ int main(int argc, char** argv){
 
     ASSERT((inet_aton(argv[1], &addr) == 1), "Uso: %s direccion_ip [-v]\n",argv[0]);
 
+    //Los sockets raw no se envían a ningún puerto, el propio kernel del receptor se encarga de procesarlos.
     server_addr.sin_port = 0;
     server_addr.sin_addr = addr;
     server_addr.sin_family = AF_INET;
 
     addr_size = sizeof(server_addr);
 
+    //Creamos socket RAW
     sockfd = socket(AF_INET, SOCK_RAW, IPPROTO_ICMP);
     ASSERT(sockfd !=-1, "Error creando socket: %s\n",strerror(errno));
-
+    
+    //Asignamos dirección y puerto locales al socket
     aux = bind(sockfd, (struct sockaddr *)&my_addr, sizeof(my_addr));
     ASSERT(aux == 0, "Error vinculando socket: %s\n", strerror(errno));
 
+    //Creamos EchoRequest
     request = (EchoRequest*) calloc(1,sizeof(EchoRequest));
     createICMP_request(request);
 
@@ -101,6 +105,7 @@ ICMPHeader createICMP_header(){
     return header;
 }
 
+//Crea el checksum de datos a partir de una dirección y número de bytes.
 unsigned short create_checksum(unsigned char* addr, size_t size ){
     unsigned int checksum = 0;
 
@@ -122,6 +127,7 @@ unsigned short create_checksum(unsigned char* addr, size_t size ){
     return (~checksum);
 }
 
+//Crea una petición ICMP
 void createICMP_request(EchoRequest* request){
     request->icmpHdr = createICMP_header();
     request->pid = (unsigned short) getpid();
@@ -133,6 +139,7 @@ void createICMP_request(EchoRequest* request){
 
 }
 
+//Imprime mensaje de información/Error según el Type y el Code de la cabecera ICMP
 void print_info_msg(unsigned char type, unsigned char code)
 {
 
